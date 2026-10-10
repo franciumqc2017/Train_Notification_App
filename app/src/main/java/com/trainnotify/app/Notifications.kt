@@ -49,6 +49,7 @@ object Notifications {
             .build()
         context.getSystemService(NotificationManager::class.java)
             .notify(departure.key.hashCode(), notification)
+        if (Settings(context).loudAlert) AlarmSound.play(context)
     }
 
     private fun openApp(context: Context): PendingIntent =

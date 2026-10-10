@@ -61,14 +61,16 @@ class MonitorService : Service() {
     }
 
     private fun poll(settings: Settings, silent: Boolean) {
-        val station = settings.stationCode
         val seen = settings.seenDepartures.toMutableList()
-        for (trainNum in settings.trainNumbers) {
+        // One request per train number, however many stations it is watched at.
+        for ((trainNum, watches) in settings.watches.groupBy { it.trainNum }) {
             val runs = AmtrakerClient.fetchRuns(trainNum)
-            for (departure in DepartureChecker.departures(runs, station)) {
-                if (departure.key in seen) continue
-                seen += departure.key
-                if (!silent) Notifications.departed(this, departure)
+            for (watch in watches) {
+                for (departure in DepartureChecker.departures(runs, watch.stationCode)) {
+                    if (departure.key in seen) continue
+                    seen += departure.key
+                    if (!silent) Notifications.departed(this, departure)
+                }
             }
         }
         settings.seenDepartures = seen
@@ -80,7 +82,7 @@ class MonitorService : Service() {
     }
 
     private fun describe(settings: Settings) =
-        "Train ${settings.trainNumbers.joinToString(", ")} at ${settings.stationCode}"
+        settings.watches.joinToString(", ") { "${it.trainNum} at ${it.stationCode}" }
 
     companion object {
         private const val TAG = "MonitorService"

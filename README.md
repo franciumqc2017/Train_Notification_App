@@ -12,7 +12,8 @@ Train data from [Amtraker](https://amtraker.com).
 
 1. Open this folder in Android Studio and let it sync (it downloads Gradle and the Android SDK pieces).
 2. Plug in your phone with USB debugging on, then press Run.
-3. Allow notifications, enter the train numbers and station code (for example `PHL`), and tap Start monitoring.
+3. Allow notifications. For each train, enter its number and the station code (for example `PHL`) and tap Add train,
+   then tap Start monitoring. Each train can be watched at a different station.
 
 ## Code map
 

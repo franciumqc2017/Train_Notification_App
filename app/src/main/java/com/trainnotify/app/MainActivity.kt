@@ -12,7 +12,10 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -26,6 +29,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -52,40 +57,76 @@ class MainActivity : ComponentActivity() {
 
     @Composable
     private fun SetupScreen(settings: Settings) {
-        var trains by remember { mutableStateOf(settings.trainNumbers.joinToString(", ")) }
-        var station by remember { mutableStateOf(settings.stationCode) }
+        val watches = remember { settings.watches.toMutableStateList() }
+        var train by remember { mutableStateOf("") }
+        var station by remember { mutableStateOf("") }
         var poll by remember { mutableStateOf(settings.pollSeconds.toString()) }
         var monitoring by remember { mutableStateOf(settings.monitoring) }
 
         Column(
-            Modifier.padding(24.dp).fillMaxWidth(),
+            Modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Text("Train departure alerts", style = MaterialTheme.typography.headlineSmall)
-            OutlinedTextField(
-                value = trains,
-                onValueChange = { trains = it },
-                label = { Text("Train numbers (comma separated)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii),
-                enabled = !monitoring,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = station,
-                onValueChange = { station = it },
-                label = { Text("Station code, e.g. PHL") },
-                keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
-                enabled = !monitoring,
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = poll,
-                onValueChange = { poll = it },
-                label = { Text("Check every (seconds, min 30)") },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                enabled = !monitoring,
-                modifier = Modifier.fillMaxWidth(),
-            )
+
+            if (watches.isEmpty()) {
+                Text("No trains yet. Add a train and the station to watch it leave.")
+            }
+            watches.forEachIndexed { index, watch ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Text(
+                        "Train ${watch.trainNum} leaving ${watch.stationCode}",
+                        style = MaterialTheme.typography.bodyLarge,
+                        modifier = Modifier.weight(1f),
+                    )
+                    if (!monitoring) {
+                        TextButton(onClick = {
+                            watches.removeAt(index)
+                            settings.watches = watches.toList()
+                        }) { Text("Remove") }
+                    }
+                }
+            }
+
+            if (!monitoring) {
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    OutlinedTextField(
+                        value = train,
+                        onValueChange = { train = it.trim() },
+                        label = { Text("Train") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.weight(1f),
+                    )
+                    OutlinedTextField(
+                        value = station,
+                        onValueChange = { station = it.trim().uppercase() },
+                        label = { Text("Station, e.g. PHL") },
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(capitalization = KeyboardCapitalization.Characters),
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+                OutlinedButton(
+                    onClick = {
+                        val watch = Watch(train, station)
+                        if (watch !in watches) watches += watch
+                        settings.watches = watches.toList()
+                        train = ""
+                        station = ""
+                    },
+                    enabled = train.isNotBlank() && station.isNotBlank(),
+                    modifier = Modifier.fillMaxWidth(),
+                ) { Text("Add train") }
+
+                OutlinedTextField(
+                    value = poll,
+                    onValueChange = { poll = it },
+                    label = { Text("Check every (seconds, min 30)") },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
 
             if (monitoring) {
                 OutlinedButton(
@@ -98,13 +139,12 @@ class MainActivity : ComponentActivity() {
             } else {
                 Button(
                     onClick = {
-                        settings.trainNumbers = trains.split(",")
-                        settings.stationCode = station
+                        settings.watches = watches.toList()
                         settings.pollSeconds = poll.toIntOrNull() ?: 60
                         MonitorService.start(this@MainActivity)
                         monitoring = true
                     },
-                    enabled = trains.isNotBlank() && station.isNotBlank(),
+                    enabled = watches.isNotEmpty(),
                     modifier = Modifier.fillMaxWidth(),
                 ) { Text("Start monitoring") }
             }

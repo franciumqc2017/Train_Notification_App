@@ -24,3 +24,6 @@ data class Departure(
     val stationName: String,
     val actualDeparture: String?,
 )
+
+/** One train number to watch at one station. */
+data class Watch(val trainNum: String, val stationCode: String)

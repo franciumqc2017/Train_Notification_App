@@ -31,6 +31,11 @@ class Settings(context: Context) {
         get() = prefs.getInt(KEY_POLL, 60)
         set(value) = prefs.edit().putInt(KEY_POLL, value.coerceAtLeast(30)).apply()
 
+    /** Also play the alarm sound on departure, which is heard even on silent or vibrate. */
+    var loudAlert: Boolean
+        get() = prefs.getBoolean(KEY_LOUD_ALERT, false)
+        set(value) = prefs.edit().putBoolean(KEY_LOUD_ALERT, value).apply()
+
     var monitoring: Boolean
         get() = prefs.getBoolean(KEY_MONITORING, false)
         set(value) = prefs.edit().putBoolean(KEY_MONITORING, value).apply()
@@ -46,6 +51,7 @@ class Settings(context: Context) {
         const val KEY_LEGACY_STATION = "station"
         const val KEY_POLL = "poll_seconds"
         const val KEY_MONITORING = "monitoring"
+        const val KEY_LOUD_ALERT = "loud_alert"
         const val KEY_SEEN = "seen"
         const val MAX_SEEN = 200
     }

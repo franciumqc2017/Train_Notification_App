@@ -18,6 +18,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
+import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -62,6 +63,7 @@ class MainActivity : ComponentActivity() {
         var station by remember { mutableStateOf("") }
         var poll by remember { mutableStateOf(settings.pollSeconds.toString()) }
         var monitoring by remember { mutableStateOf(settings.monitoring) }
+        var loudAlert by remember { mutableStateOf(settings.loudAlert) }
 
         Column(
             Modifier.padding(24.dp).fillMaxWidth().verticalScroll(rememberScrollState()),
@@ -128,10 +130,23 @@ class MainActivity : ComponentActivity() {
                 )
             }
 
+            // Can be changed while monitoring: the service reads it when a train departs.
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Checkbox(
+                    checked = loudAlert,
+                    onCheckedChange = {
+                        loudAlert = it
+                        settings.loudAlert = it
+                    },
+                )
+                Text("Play alarm sound, even on silent or vibrate")
+            }
+
             if (monitoring) {
                 OutlinedButton(
                     onClick = {
                         MonitorService.stop(this@MainActivity)
+                        AlarmSound.stop()
                         monitoring = false
                     },
                     modifier = Modifier.fillMaxWidth(),

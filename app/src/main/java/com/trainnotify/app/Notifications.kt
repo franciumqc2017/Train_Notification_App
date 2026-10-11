@@ -6,7 +6,9 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.NotificationCompat
+import java.time.LocalDate
 import java.time.OffsetDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 object Notifications {
@@ -57,7 +59,11 @@ object Notifications {
             context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE
         )
 
+    /** Shows the day too when it isn't today, so a stale departure can't pass for today's. */
     private fun formatTime(iso: String): String =
-        runCatching { OffsetDateTime.parse(iso).format(DateTimeFormatter.ofPattern("h:mm a")) }
-            .getOrDefault(iso)
+        runCatching {
+            val time = OffsetDateTime.parse(iso).atZoneSameInstant(ZoneId.systemDefault())
+            val pattern = if (time.toLocalDate() == LocalDate.now()) "h:mm a" else "EEE MMM d, h:mm a"
+            time.format(DateTimeFormatter.ofPattern(pattern))
+        }.getOrDefault(iso)
 }
